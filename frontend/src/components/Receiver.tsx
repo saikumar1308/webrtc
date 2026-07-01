@@ -11,12 +11,21 @@ export function Receiver() {
 
         socket.onmessage = async (event) => {
             const message = JSON.parse(event.data);
+            const pc = new RTCPeerConnection();
             if (message.type === 'offer') {
-                const pc = new RTCPeerConnection();
                 pc.setRemoteDescription(message.sdp);
+
+                pc.onicecandidate = (event) => {
+                    console.log('ICE candidate event:', event);
+                    if (event.candidate) {
+                        socket.send(JSON.stringify({ type: 'iceCandidate', candidate: event.candidate }));
+                    }
+                }
                 const answer = await pc.createAnswer();
                 await pc.setLocalDescription(answer);
                 socket?.send(JSON.stringify({ type: 'answer', sdp: pc.localDescription }));
+            } else if (message.type === 'iceCandidate') {
+                await pc.addIceCandidate(message.candidate);
             }
         }
 

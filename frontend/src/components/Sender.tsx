@@ -19,16 +19,31 @@ export function Sender() {
             console.error('WebSocket is not connected');
             return;
         }
-        const pc = new RTCPeerConnection();
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
 
-        socket?.send(JSON.stringify({ type: 'offer', sdp: pc.localDescription }));
+        const pc = new RTCPeerConnection();
+
+        pc.onnegotiationneeded = async () => {
+            console.log('Negotiation needed event');
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+
+            socket?.send(JSON.stringify({ type: 'offer', sdp: pc.localDescription }));
+        }
+
+        pc.onicecandidate = (event) => {
+            console.log('ICE candidate event:', event);
+            if (event.candidate) {
+                socket.send(JSON.stringify({ type: 'iceCandidate', candidate: event.candidate }));
+            }
+        }
+
 
         socket.onmessage = (event) => {
             const message = JSON.parse(event.data);
             if (message.type === 'answer') {
                 pc.setRemoteDescription(message.sdp);
+            } else if (message.type === 'iceCandidate') {
+                pc.addIceCandidate(message.candidate);
             }
         }
     }
