@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 export function Sender() {
     const [socket, setSocket] = useState<WebSocket | null>(null);
-    
+
     useEffect(() => {
         const socket = new WebSocket('ws://localhost:8080');
 
@@ -46,12 +46,23 @@ export function Sender() {
                 pc.addIceCandidate(message.candidate);
             }
         }
+
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        pc.addTrack(stream.getTracks()[0]);
+        const videoElement = document.getElementById('sender-video') as HTMLVideoElement;
+        if (videoElement) {
+            videoElement.srcObject = stream;
+            videoElement.play();
+        }
     }
 
     return (
         <div>
             <h1>Sender</h1>
-            <button onClick={startSendingMsg}>Send Message</button>
+            <button onClick={startSendingMsg}>Send Video</button>
+            <div className="video-container">
+                <video id="sender-video" autoPlay playsInline></video>
+            </div>
         </div>
     )
 }
