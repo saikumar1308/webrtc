@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 
 export function Receiver() {
-
     useEffect(() => {
         const socket = new WebSocket('ws://localhost:8080');
         let pc: RTCPeerConnection;
@@ -9,7 +8,7 @@ export function Receiver() {
         socket.onopen = () => {
             console.log('Connected to WebSocket server as Receiver');
             socket.send(JSON.stringify({ type: 'receiver' }));
-        }
+        };
 
         socket.onmessage = async (event) => {
             const message = JSON.parse(event.data);
@@ -22,7 +21,7 @@ export function Receiver() {
                     if (event.candidate) {
                         socket.send(JSON.stringify({ type: 'iceCandidate', candidate: event.candidate }));
                     }
-                }
+                };
 
                 pc.ontrack = (event) => {
                     console.log('Track event:', event);
@@ -31,7 +30,7 @@ export function Receiver() {
                         videoElement.srcObject = new MediaStream([event.track]);
                         videoElement.play();
                     }
-                }
+                };
 
                 const answer = await pc.createAnswer();
                 await pc.setLocalDescription(answer);
@@ -39,16 +38,18 @@ export function Receiver() {
             } else if (message.type === 'iceCandidate') {
                 await pc.addIceCandidate(message.candidate);
             }
-        }
-
-    }, [])
+        };
+    }, []);
 
     return (
-        <div>
-            <h1>Receiver</h1>
-            <div className="video-container">
-                <video id="receiver-video" autoPlay playsInline></video>
+        <div className="page-shell">
+            <div className="page-card">
+                <h1 className="page-heading">Receiver</h1>
+                <p className="page-subtitle">The incoming video will appear here in a clean preview window.</p>
+                <div className="video-container">
+                    <video id="receiver-video" autoPlay playsInline></video>
+                </div>
             </div>
         </div>
-    )
+    );
 }
