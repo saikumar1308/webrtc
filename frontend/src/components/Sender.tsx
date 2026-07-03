@@ -9,10 +9,10 @@ export function Sender() {
         socket.onopen = () => {
             console.log('Connected to WebSocket server as Sender');
             socket.send(JSON.stringify({ type: 'sender' }));
-        }
+        };
 
         setSocket(socket);
-    }, [])
+    }, []);
 
     async function startSendingMsg() {
         if (!socket) {
@@ -28,15 +28,14 @@ export function Sender() {
             await pc.setLocalDescription(offer);
 
             socket?.send(JSON.stringify({ type: 'offer', sdp: pc.localDescription }));
-        }
+        };
 
         pc.onicecandidate = (event) => {
             console.log('ICE candidate event:', event);
             if (event.candidate) {
                 socket.send(JSON.stringify({ type: 'iceCandidate', candidate: event.candidate }));
             }
-        }
-
+        };
 
         socket.onmessage = (event) => {
             const message = JSON.parse(event.data);
@@ -45,7 +44,7 @@ export function Sender() {
             } else if (message.type === 'iceCandidate') {
                 pc.addIceCandidate(message.candidate);
             }
-        }
+        };
 
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
         pc.addTrack(stream.getTracks()[0]);
@@ -57,12 +56,15 @@ export function Sender() {
     }
 
     return (
-        <div>
-            <h1>Sender</h1>
-            <button onClick={startSendingMsg}>Send Video</button>
-            <div className="video-container">
-                <video id="sender-video" autoPlay playsInline></video>
+        <div className="page-shell">
+            <div className="page-card">
+                <h1 className="page-heading">Sender</h1>
+                <p className="page-subtitle">Start your webcam stream and share it with the receiver.</p>
+                <button className="action-button" onClick={startSendingMsg}>Send Video</button>
+                <div className="video-container">
+                    <video id="sender-video" autoPlay playsInline muted></video>
+                </div>
             </div>
         </div>
-    )
+    );
 }
