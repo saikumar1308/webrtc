@@ -3,7 +3,14 @@ import { useEffect } from "react";
 export function Receiver() {
     useEffect(() => {
         const socket = new WebSocket('ws://localhost:8080');
-        let pc: RTCPeerConnection;
+        let pc: RTCPeerConnection | null = null;
+
+        const clearRemoteVideo = () => {
+            const videoElement = document.getElementById('receiver-video') as HTMLVideoElement | null;
+            if (videoElement) {
+                videoElement.srcObject = null;
+            }
+        };
 
         socket.onopen = () => {
             console.log('Connected to WebSocket server as Receiver');
@@ -25,7 +32,7 @@ export function Receiver() {
 
                 pc.ontrack = (event) => {
                     console.log('Track event:', event);
-                    const videoElement = document.getElementById('receiver-video') as HTMLVideoElement;
+                    const videoElement = document.getElementById('receiver-video') as HTMLVideoElement | null;
                     if (videoElement) {
                         videoElement.srcObject = new MediaStream([event.track]);
                         videoElement.play();
@@ -34,10 +41,26 @@ export function Receiver() {
 
                 const answer = await pc.createAnswer();
                 await pc.setLocalDescription(answer);
-                socket?.send(JSON.stringify({ type: 'answer', sdp: pc.localDescription }));
+                socket.send(JSON.stringify({ type: 'answer', sdp: pc.localDescription }));
             } else if (message.type === 'iceCandidate') {
-                await pc.addIceCandidate(message.candidate);
+                if (pc) {
+                    await pc.addIceCandidate(message.candidate);
+                }
+            } else if (message.type === 'stop') {
+                if (pc) {
+                    pc.close();
+                    pc = null;
+                }
+                clearRemoteVideo();
             }
+        };
+
+        return () => {
+            if (pc) {
+                pc.close();
+            }
+            clearRemoteVideo();
+            socket.close();
         };
     }, []);
 
